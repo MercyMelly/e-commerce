@@ -4,6 +4,10 @@ Table brand {
   brand_description text
   created_at timestamp [default: `now()`]
   updated_at timestamp [default: `now()`]
+  is_deleted boolean [default: false]
+  Indexes {
+    brand_name [name: 'idx_brand_name']
+  }
 }
 
 Table product_category {
@@ -12,6 +16,11 @@ Table product_category {
   parent_category_id int [ref: > product_category.category_id, null]
   category_description text
   created_at timestamp [default: `now()`]
+  is_deleted boolean [default: false]
+  Indexes {
+    category_name [name: 'idx_category_name']
+    parent_category_id [name: 'idx_parent_category']
+  }
 }
 
 Table product {
@@ -23,6 +32,12 @@ Table product {
   base_price decimal(10,2) [not null]
   created_at timestamp [default: `now()`]
   updated_at timestamp [default: `now()`]
+  is_deleted boolean [default: false]
+  Indexes {
+    product_name [name: 'idx_product_name']
+    brand_id [name: 'idx_product_brand']
+    category_id [name: 'idx_product_category']
+  }
 }
 
 Table product_image {
@@ -32,17 +47,24 @@ Table product_image {
   is_primary boolean [default: false]
   alt_text varchar(100)
   created_at timestamp [default: `now()`]
+  is_deleted boolean [default: false]
+  Indexes {
+    product_id [name: 'idx_image_product']
+    is_primary [name: 'idx_primary_images']
+  }
 }
 
 Table attribute_category {
   attribute_category_id int [pk, increment]
   category_name varchar(100) [not null]
   category_description text
+  is_deleted boolean [default: false]
 }
 
 Table attribute_type {
   attribute_type_id int [pk, increment]
   type_name varchar(50) [not null]
+  is_deleted boolean [default: false]
 }
 
 Table product_attribute {
@@ -51,17 +73,20 @@ Table product_attribute {
   attribute_category_id int [ref: > attribute_category.attribute_category_id, not null]
   attribute_type_id int [ref: > attribute_type.attribute_type_id, not null]
   is_required boolean [default: false]
+  is_deleted boolean [default: false]
 }
 
 Table color {
   color_id int [pk, increment]
   color_name varchar(50) [not null]
   hex_code char(7) [not null]
+  is_deleted boolean [default: false]
 }
 
 Table size_category {
   size_category_id int [pk, increment]
   category_name varchar(50) [not null]
+  is_deleted boolean [default: false]
 }
 
 Table size_option {
@@ -69,12 +94,20 @@ Table size_option {
   size_category_id int [ref: > size_category.size_category_id, not null]
   size_value varchar(20) [not null]
   size_description varchar(100)
+  is_deleted boolean [default: false]
+  Indexes {
+    size_category_id [name: 'idx_size_category']
+  }
 }
 
 Table product_variation {
   variation_id int [pk, increment]
   product_id int [ref: > product.product_id, not null]
   variation_name varchar(100) [not null]
+  is_deleted boolean [default: false]
+  Indexes {
+    product_id [name: 'idx_variation_product']
+  }
 }
 
 Table product_item {
@@ -85,6 +118,11 @@ Table product_item {
   quantity_in_stock int [default: 0]
   created_at timestamp [default: `now()`]
   updated_at timestamp [default: `now()`]
+  is_deleted boolean [default: false]
+  Indexes {
+    SKU [name: 'idx_sku_unique', unique]
+    product_id [name: 'idx_item_product']
+  }
 }
 
 Table product_item_variation {
@@ -94,6 +132,13 @@ Table product_item_variation {
   color_id int [ref: > color.color_id, null]
   size_id int [ref: > size_option.size_id, null]
   custom_value varchar(255) [null]
+  Constraint {
+    check_non_null: "color_id IS NOT NULL OR size_id IS NOT NULL OR custom_value IS NOT NULL"
+  }
+  Indexes {
+    item_id [name: 'idx_item_variation_item']
+    variation_id [name: 'idx_item_variation_type']
+  }
 }
 
 Table product_attribute_value {
@@ -101,4 +146,24 @@ Table product_attribute_value {
   product_id int [ref: > product.product_id, not null]
   attribute_id int [ref: > product_attribute.attribute_id, not null]
   attribute_value text [not null]
+  is_deleted boolean [default: false]
+  Indexes {
+    product_id [name: 'idx_attr_value_product']
+    attribute_id [name: 'idx_attr_value_attribute']
+  }
+}
+
+Table price_history {
+  price_history_id int [pk, increment]
+  product_id int [ref: > product.product_id, not null]
+  item_id int [ref: > product_item.item_id, null]
+  old_price decimal(10,2) [not null]
+  new_price decimal(10,2) [not null]
+  changed_at timestamp [default: `now()`]
+  changed_by varchar(100)
+  Indexes {
+    product_id [name: 'idx_price_history_product']
+    item_id [name: 'idx_price_history_item']
+    changed_at [name: 'idx_price_history_date']
+  }
 }
