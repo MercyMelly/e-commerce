@@ -1,0 +1,403 @@
+-- ecommerce.sql
+-- Complete database schema for e-commerce platform
+-- Version: 1.0
+-- Created: 2023-11-15
+
+-- 1. Database Setup
+DROP DATABASE IF EXISTS ecommerce;
+CREATE DATABASE ecommerce;
+USE ecommerce;
+
+-- 2. Table Creation
+-- 🏷️ brand table
+CREATE TABLE brand (
+    brand_id INT AUTO_INCREMENT PRIMARY KEY,
+    brand_name VARCHAR(100) NOT NULL,
+    brand_description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_brand_name (brand_name)
+);
+
+-- 🗂️ product_category table
+CREATE TABLE product_category (
+    category_id INT AUTO_INCREMENT PRIMARY KEY,
+    category_name VARCHAR(100) NOT NULL,
+    parent_category_id INT NULL,
+    category_description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_category_name (category_name),
+    INDEX idx_parent_category (parent_category_id),
+    CONSTRAINT fk_parent_category 
+        FOREIGN KEY (parent_category_id) 
+        REFERENCES product_category(category_id)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE
+);
+
+-- 📦 product table
+CREATE TABLE product (
+    product_id INT AUTO_INCREMENT PRIMARY KEY,
+    product_name VARCHAR(255) NOT NULL,
+    product_description TEXT,
+    brand_id INT NOT NULL,
+    category_id INT NOT NULL,
+    base_price DECIMAL(10,2) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_product_name (product_name),
+    INDEX idx_brand (brand_id),
+    INDEX idx_category (category_id),
+    INDEX idx_price (base_price),
+    FULLTEXT INDEX ft_product_search (product_name, product_description),
+    CONSTRAINT fk_product_brand 
+        FOREIGN KEY (brand_id) 
+        REFERENCES brand(brand_id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+    CONSTRAINT fk_product_category 
+        FOREIGN KEY (category_id) 
+        REFERENCES product_category(category_id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE
+);
+
+-- 🖼️ product_image table
+CREATE TABLE product_image (
+    image_id INT AUTO_INCREMENT PRIMARY KEY,
+    product_id INT NOT NULL,
+    image_url VARCHAR(255) NOT NULL,
+    is_primary BOOLEAN DEFAULT FALSE,
+    alt_text VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_product_images (product_id),
+    CONSTRAINT fk_image_product 
+        FOREIGN KEY (product_id) 
+        REFERENCES product(product_id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+-- 📚 attribute_category table
+CREATE TABLE attribute_category (
+    attribute_category_id INT AUTO_INCREMENT PRIMARY KEY,
+    category_name VARCHAR(100) NOT NULL,
+    category_description TEXT,
+    INDEX idx_attr_category_name (category_name)
+);
+
+-- 🧪 attribute_type table
+CREATE TABLE attribute_type (
+    attribute_type_id INT AUTO_INCREMENT PRIMARY KEY,
+    type_name VARCHAR(50) NOT NULL,
+    INDEX idx_type_name (type_name)
+);
+
+-- 🧵 product_attribute table
+CREATE TABLE product_attribute (
+    attribute_id INT AUTO_INCREMENT PRIMARY KEY,
+    attribute_name VARCHAR(100) NOT NULL,
+    attribute_category_id INT NOT NULL,
+    attribute_type_id INT NOT NULL,
+    is_required BOOLEAN DEFAULT FALSE,
+    INDEX idx_attribute_name (attribute_name),
+    INDEX idx_attribute_category (attribute_category_id),
+    INDEX idx_attribute_type (attribute_type_id),
+    CONSTRAINT fk_attribute_category 
+        FOREIGN KEY (attribute_category_id) 
+        REFERENCES attribute_category(attribute_category_id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+    CONSTRAINT fk_attribute_type 
+        FOREIGN KEY (attribute_type_id) 
+        REFERENCES attribute_type(attribute_type_id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE
+);
+
+-- 🎨 color table
+CREATE TABLE color (
+    color_id INT AUTO_INCREMENT PRIMARY KEY,
+    color_name VARCHAR(50) NOT NULL,
+    hex_code CHAR(7) NOT NULL,
+    INDEX idx_color_name (color_name),
+    INDEX idx_hex_code (hex_code)
+);
+
+-- 📏 size_category table
+CREATE TABLE size_category (
+    size_category_id INT AUTO_INCREMENT PRIMARY KEY,
+    category_name VARCHAR(50) NOT NULL,
+    INDEX idx_size_category_name (category_name)
+);
+
+-- 📐 size_option table
+CREATE TABLE size_option (
+    size_id INT AUTO_INCREMENT PRIMARY KEY,
+    size_category_id INT NOT NULL,
+    size_value VARCHAR(20) NOT NULL,
+    size_description VARCHAR(100),
+    INDEX idx_size_value (size_value),
+    INDEX idx_size_category (size_category_id),
+    CONSTRAINT fk_size_category 
+        FOREIGN KEY (size_category_id) 
+        REFERENCES size_category(size_category_id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+-- 🔄 product_variation table
+CREATE TABLE product_variation (
+    variation_id INT AUTO_INCREMENT PRIMARY KEY,
+    product_id INT NOT NULL,
+    variation_name VARCHAR(100) NOT NULL,
+    INDEX idx_product_variations (product_id),
+    CONSTRAINT fk_variation_product 
+        FOREIGN KEY (product_id) 
+        REFERENCES product(product_id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+-- 🧾 product_item table
+CREATE TABLE product_item (
+    item_id INT AUTO_INCREMENT PRIMARY KEY,
+    product_id INT NOT NULL,
+    SKU VARCHAR(50) NOT NULL,
+    price DECIMAL(10,2) NOT NULL,
+    quantity_in_stock INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE INDEX unq_sku (SKU),
+    INDEX idx_product_items (product_id),
+    INDEX idx_price (price),
+    INDEX idx_stock (quantity_in_stock),
+    CONSTRAINT fk_item_product 
+        FOREIGN KEY (product_id) 
+        REFERENCES product(product_id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+-- product_item_variation junction table
+CREATE TABLE product_item_variation (
+    item_variation_id INT AUTO_INCREMENT PRIMARY KEY,
+    item_id INT NOT NULL,
+    variation_id INT NOT NULL,
+    color_id INT,
+    size_id INT,
+    custom_value VARCHAR(255),
+    INDEX idx_item_variation (item_id, variation_id),
+    INDEX idx_color (color_id),
+    INDEX idx_size (size_id),
+    CONSTRAINT fk_item_variation_item 
+        FOREIGN KEY (item_id) 
+        REFERENCES product_item(item_id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    CONSTRAINT fk_item_variation_variation 
+        FOREIGN KEY (variation_id) 
+        REFERENCES product_variation(variation_id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    CONSTRAINT fk_item_variation_color 
+        FOREIGN KEY (color_id) 
+        REFERENCES color(color_id)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE,
+    CONSTRAINT fk_item_variation_size 
+        FOREIGN KEY (size_id) 
+        REFERENCES size_option(size_id)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE
+);
+
+-- product_attribute_value junction table
+CREATE TABLE product_attribute_value (
+    attribute_value_id INT AUTO_INCREMENT PRIMARY KEY,
+    product_id INT NOT NULL,
+    attribute_id INT NOT NULL,
+    attribute_value TEXT NOT NULL,
+    INDEX idx_product_attributes (product_id, attribute_id),
+    CONSTRAINT fk_attribute_value_product 
+        FOREIGN KEY (product_id) 
+        REFERENCES product(product_id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    CONSTRAINT fk_attribute_value_attribute 
+        FOREIGN KEY (attribute_id) 
+        REFERENCES product_attribute(attribute_id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+-- 3. Additional Indexes
+CREATE INDEX idx_product_search ON product(product_name, product_description(255));
+CREATE INDEX idx_product_price_range ON product(base_price);
+
+-- 4. Views
+CREATE VIEW product_catalog_view AS
+SELECT p.product_id, p.product_name, p.base_price, 
+       b.brand_name, pc.category_name,
+       (SELECT image_url FROM product_image 
+        WHERE product_id = p.product_id AND is_primary = TRUE LIMIT 1) AS primary_image
+FROM product p
+JOIN brand b ON p.brand_id = b.brand_id
+JOIN product_category pc ON p.category_id = pc.category_id;
+
+CREATE VIEW inventory_status_view AS
+SELECT pi.item_id, p.product_name, pi.SKU, pi.quantity_in_stock,
+       CASE 
+           WHEN pi.quantity_in_stock = 0 THEN 'Out of Stock'
+           WHEN pi.quantity_in_stock < 10 THEN 'Low Stock'
+           ELSE 'In Stock'
+       END AS stock_status
+FROM product_item pi
+JOIN product p ON pi.product_id = p.product_id;
+
+CREATE VIEW product_variations_view AS
+SELECT p.product_id, p.product_name, 
+       pi.item_id, pi.SKU, pi.price, pi.quantity_in_stock,
+       GROUP_CONCAT(
+           CONCAT(pv.variation_name, ': ', 
+                  COALESCE(c.color_name, s.size_value, piv.custom_value))
+           SEPARATOR ', ') AS variations
+FROM product p
+JOIN product_item pi ON p.product_id = pi.product_id
+JOIN product_item_variation piv ON pi.item_id = piv.item_id
+JOIN product_variation pv ON piv.variation_id = pv.variation_id
+LEFT JOIN color c ON piv.color_id = c.color_id
+LEFT JOIN size_option s ON piv.size_id = s.size_id
+GROUP BY pi.item_id;
+
+-- 5. Stored Procedures
+DELIMITER //
+CREATE PROCEDURE GetProductVariants(IN productId INT)
+BEGIN
+    SELECT pi.item_id, pi.SKU, pi.price, pi.quantity_in_stock,
+           GROUP_CONCAT(
+               CONCAT(pv.variation_name, ': ', 
+                      COALESCE(c.color_name, s.size_value, piv.custom_value))
+               SEPARATOR ', ') AS variations
+    FROM product_item pi
+    JOIN product_item_variation piv ON pi.item_id = piv.item_id
+    JOIN product_variation pv ON piv.variation_id = pv.variation_id
+    LEFT JOIN color c ON piv.color_id = c.color_id
+    LEFT JOIN size_option s ON piv.size_id = s.size_id
+    WHERE pi.product_id = productId
+    GROUP BY pi.item_id;
+END //
+
+CREATE PROCEDURE UpdateInventory(IN itemId INT, IN quantityChange INT)
+BEGIN
+    UPDATE product_item
+    SET quantity_in_stock = quantity_in_stock + quantityChange
+    WHERE item_id = itemId;
+END //
+
+CREATE PROCEDURE SearchProducts(IN searchTerm VARCHAR(255))
+BEGIN
+    SELECT p.product_id, p.product_name, p.base_price, 
+           b.brand_name, pc.category_name,
+           (SELECT image_url FROM product_image 
+            WHERE product_id = p.product_id AND is_primary = TRUE LIMIT 1) AS primary_image
+    FROM product p
+    JOIN brand b ON p.brand_id = b.brand_id
+    JOIN product_category pc ON p.category_id = pc.category_id
+    WHERE MATCH(p.product_name, p.product_description) AGAINST(searchTerm IN NATURAL LANGUAGE MODE);
+END //
+DELIMITER ;
+
+-- 6. Triggers
+DELIMITER //
+CREATE TRIGGER before_product_insert
+BEFORE INSERT ON product
+FOR EACH ROW
+BEGIN
+    IF NEW.base_price <= 0 THEN
+        SIGNAL SQLSTATE '45000' 
+        SET MESSAGE_TEXT = 'Product price must be greater than 0';
+    END IF;
+END //
+
+CREATE TRIGGER before_product_update
+BEFORE UPDATE ON product
+FOR EACH ROW
+BEGIN
+    IF NEW.base_price <= 0 THEN
+        SIGNAL SQLSTATE '45000' 
+        SET MESSAGE_TEXT = 'Product price must be greater than 0';
+    END IF;
+END //
+
+CREATE TRIGGER after_order_item_insert
+AFTER INSERT ON order_items
+FOR EACH ROW
+BEGIN
+    UPDATE product_item
+    SET quantity_in_stock = quantity_in_stock - NEW.quantity
+    WHERE item_id = NEW.item_id;
+END //
+
+CREATE TRIGGER after_order_item_update
+AFTER UPDATE ON order_items
+FOR EACH ROW
+BEGIN
+    -- Adjust inventory based on quantity change
+    UPDATE product_item
+    SET quantity_in_stock = quantity_in_stock + OLD.quantity - NEW.quantity
+    WHERE item_id = NEW.item_id;
+END //
+
+CREATE TRIGGER after_order_item_delete
+AFTER DELETE ON order_items
+FOR EACH ROW
+BEGIN
+    -- Restore inventory when order item is deleted
+    UPDATE product_item
+    SET quantity_in_stock = quantity_in_stock + OLD.quantity
+    WHERE item_id = OLD.item_id;
+END //
+DELIMITER ;
+
+-- 7. Sample Data (Optional)
+-- Brands
+INSERT INTO brand (brand_name, brand_description) VALUES 
+('Nike', 'Just Do It'),
+('Apple', 'Think Different'),
+('Samsung', 'Do What You Can''t'),
+('Adidas', 'Impossible is Nothing');
+
+-- Categories
+INSERT INTO product_category (category_name, parent_category_id) VALUES
+('Electronics', NULL),
+('Smartphones', 1),
+('Laptops', 1),
+('Clothing', NULL),
+('Shoes', 4),
+('Accessories', NULL);
+
+-- Colors
+INSERT INTO color (color_name, hex_code) VALUES
+('Red', '#FF0000'),
+('Blue', '#0000FF'),
+('Black', '#000000'),
+('White', '#FFFFFF'),
+('Green', '#00FF00');
+
+-- Sizes
+INSERT INTO size_category (category_name) VALUES
+('Clothing'),
+('Shoes'),
+('Screen Size');
+
+INSERT INTO size_option (size_category_id, size_value, size_description) VALUES
+(1, 'S', 'Small'),
+(1, 'M', 'Medium'),
+(1, 'L', 'Large'),
+(2, '8', 'US Size 8'),
+(2, '9', 'US Size 9'),
+(2, '10', 'US Size 10'),
+(3, '13', '13 inches'),
+(3, '15', '15 inches'),
+(3, '17', '17 inches');
