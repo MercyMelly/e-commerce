@@ -1,45 +1,80 @@
-E-Commerce Database Schema Documentation
-Our database schema provides a robust foundation for managing all aspects of an e-commerce platform, from product catalog management to inventory tracking. Designed with scalability and performance in mind, the schema enforces data integrity while supporting complex business operations through carefully structured relationships and constraints.
+# E-Commerce Database Schema
 
-**Core Structure**
-The relational model centers around products and their variations, with supporting tables for brands, categories, and attributes. Key features include:
-  Hierarchical product categories with self-referencing parent-child relationships
-  Multi-variant product system supporting color/size/custom variations
-  Flexible attribute management with categorized attributes of different types
-  Inventory tracking at the individual product item level (SKU-based)
+This database schema provides a scalable and high-performance foundation for managing all aspects of an e-commerce platform—from product catalog and variants to inventory control and analytics. It is designed to enforce data integrity while supporting complex business operations with structured relationships and built-in logic.
 
-**Data Integrity Enforcement**
-  The schema implements strict relational constraints:
-  Foreign key relationships with appropriate cascade rules (RESTRICT, CASCADE, SET NULL)
-  Validation triggers that prevent invalid data (e.g., negative prices)
-  Automatic inventory adjustment through order processing triggers
-  Unique constraints on critical business fields like SKU values
+---
 
-**Performance Optimization**
-  Strategic indexing ensures efficient querying:
-  Foreign key indexes on all relationship columns
-  Composite indexes for common join patterns
-  Full-text search capability on product names/descriptions
-  Specialized indexes for price ranges and inventory status checks
+## Core Structure
 
-**Business Logic Implementation**
-  Pre-built database operations include:
-  Product variant retrieval (with aggregated variation details)
-  Inventory management procedures for stock adjustments
-  Search functionality with natural language processing
-  Catalog views with pre-joined product/brand/category data
+- **Products & Variants**  
+  Multi-variant product system with support for color, size, and custom options.
 
-**Reporting & Analytics**
-  Ready-to-use views provide:
-  Inventory status dashboards (with stock level classifications)
-  Product variation overviews (all options in human-readable format)
-  Catalog exports with primary image references
+- **Hierarchical Categories**  
+  Categories are self-referencing to support parent-child relationships.
 
-**Development Support**
-  The optional sample data set:
-  Demonstrates real-world usage patterns
-  Provides test cases for all relationship types
-  Includes representative products across categories
-  Shows variation implementations for different product types
+- **Attributes Management**  
+  Flexible system for assigning attributes (e.g., material, dimensions) based on product type or category.
 
-This comprehensive schema balances normalization for data integrity with practical considerations for e-commerce performance. The inclusion of both structural elements and business logic components ensures the database can immediately support core platform functionality while remaining adaptable for future enhancements and improvements.
+- **SKU-Level Inventory**  
+  Tracks inventory at the most granular level—each product variant has a unique SKU.
+
+---
+
+## Data Integrity
+
+- **Relational Constraints**
+  - Foreign keys with `CASCADE`, `RESTRICT`, or `SET NULL` rules.
+  - Unique constraints on SKUs and other key identifiers.
+
+- **Validation Triggers**
+  - Prevents invalid data entries (e.g., negative prices or stock levels).
+
+- **Inventory Automation**
+  - Triggers to auto-adjust inventory during order processing.
+
+---
+
+##  Performance Optimization
+
+- **Strategic Indexing**
+  - Indexes on all foreign key relationships.
+  - Composite indexes for common query joins.
+  - Full-text search on product names/descriptions.
+  - Range indexes for price filtering and inventory status checks.
+
+---
+
+##  Business Logic
+
+- **Stored Procedures**
+  - Centralized logic for stock changes (purchase, returns, restocks).
+  - Product variant retrieval with aggregation.
+
+- **Catalog Views**
+  - Pre-joined views for simplified data access (e.g., products + brands + categories).
+  - Natural language search ready.
+
+---
+
+##  Analytics & Reporting
+
+- **Inventory Dashboards**
+  - Views with stock level classifications (low stock, out of stock, etc.).
+
+- **Variation Overviews**
+  - Human-readable listings of all options for each product.
+
+- **Export-Ready Views**
+  - Easily export catalog data including prices and images.
+
+---
+
+##  Sample Dataset
+
+Includes optional seed data:
+- Realistic product categories and items
+- Variant examples (size, color, etc.)
+- Inventory levels
+- Search and reporting test cases
+
+---
